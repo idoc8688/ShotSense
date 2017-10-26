@@ -88,12 +88,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\כהנים\Source\Repos\ShotSense\ShotSense\GemSDK.Windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\כהנים\Source\Repos\ShotSense\ShotSense\ShotSense\irrlicht-1.8.4\include;C:\Users\כהנים\Source\Repos\ShotSense\ShotSense\GemSDK.Windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\כהנים\Source\Repos\ShotSense\ShotSense\GemSDK.Windows\bin\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\כהנים\Source\Repos\ShotSense\ShotSense\ShotSense\irrlicht-1.8.4\lib\Win32-visualstudio;C:\Users\כהנים\Source\Repos\ShotSense\ShotSense\GemSDK.Windows\bin\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>GemSDK.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
