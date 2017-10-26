@@ -16,7 +16,7 @@ void connectToSensors() {
 
 void OnCombinedDataWrist(unsigned short timestamp, const float* quaternion, const float* acceleration)
 {
-	if (countWrist++ == PRINT_RATE) {
+	if (countWrist++ == 100) {
 		std::cout << "data of Wrist\n";
 		std::cout << "timestamp: " << timestamp << "\n";
 		std::cout << "quaternion: " << quaternion[0] << ", " << quaternion[1] << ", " << quaternion[2] << ", " << quaternion[3] << "\n";
