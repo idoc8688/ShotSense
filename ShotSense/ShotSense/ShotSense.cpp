@@ -134,10 +134,6 @@ void analyseMovement() {
 	quaternion deltaArmRotation(inverseArmCenter*lastArmQuat);
 
 	printQuat(deltaArmRotation);
-	/*cout << endl << "delta rotation in euler: ";
-	vector3df euler;
-	deltaRotation.toEuler(euler);
-	cout << euler.X << " " << euler.Y << " " << euler.Z << endl;*/
 	
 }
 
@@ -163,7 +159,6 @@ bool processInput(char op) {
 		else if (armData.size() < wristData.size()) {
 			wristData.resize(armData.size());
 		}
-		//Todo: 
 		processData();
 	}
 	else {
@@ -172,17 +167,79 @@ bool processInput(char op) {
 	return false;
 }
 
+//first set: m h h m m m h h h m m m
+//second set: h h h m h h m m m m m 
 void processData() {
 	ofstream f;
-	f.open("example.csv");
+	time_t timer;
+	struct tm y2k = { 0 };
+	double seconds;
 
+	y2k.tm_hour = 0;   y2k.tm_min = 0; y2k.tm_sec = 0;
+	y2k.tm_year = 100; y2k.tm_mon = 0; y2k.tm_mday = 1;
+
+	time(&timer);  /* get current time; same as: timer = time(NULL)  */
+
+	seconds = difftime(timer, mktime(&y2k));
+	std::string name = "shot_" + std::to_string((int)seconds) + ".csv";
+	f.open(name);
 	f << "arm, , , , , , , , , , , , wrist" << endl;
 	f << "a.x,a.y,a.z,G, , q.x,q.y,q.z,q.w, ,time, ," << "a.x,a.y,a.z,G, , q.x,q.y,q.z,q.w, ,time," << endl;
-	for (unsigned int i = 0; i < armData.size(); i++) {
+
+	int startOffset = findStartOfMoveIndex();
+	int endOffset = findEndOfMoveIndex();
+	for (unsigned int i = startOffset; i <= endOffset; i++) {
 		f << armData[i] << ", ," << wristData[i] << endl;
 	}
 	f.close();
 
+}
+
+int findEndOfMoveIndex() {
+	vector<float> avgGravity;
+	float tmp;
+	int index = 0;
+	for (unsigned int i = 0; i < armData.size(); i++) {
+		tmp = (armData[i].a.getGravity() + wristData[i].a.getGravity());
+		avgGravity.push_back(tmp / 2);
+	}
+	// find last peak to find end of movement from there
+	unsigned int lastPeakIndex = 0;
+	for (unsigned int i = avgGravity.size() - 1; i > 0; i--) {
+		if (avgGravity[i] > AVG_GRAVITY_LAST_PEAK) {
+			lastPeakIndex = i;
+			break;
+		}
+	}
+
+	for (unsigned int i = lastPeakIndex; i < armData.size() - END_MOVEMENT_SAMPLES_FORWARD; i++) {
+		bool isCloseToFollowingSamples = true;
+		float tmpAvg = avgGravity[i];
+		if (tmpAvg < AVG_GRAVITY_UPPER_THRESHOLD_END_MOVE && tmpAvg > AVG_GRAVITY_LOWER_THRESHOLD_END_MOVE) {
+			for (unsigned int offset = 1; offset < END_MOVEMENT_SAMPLES_FORWARD; offset++) {
+				if (abs(tmpAvg-avgGravity[i+offset]) > AVG_GRAVITY_DIFF_END_MOVE) 
+					isCloseToFollowingSamples = false;
+			}
+			if (isCloseToFollowingSamples) return i;
+		}
+	}
+	return armData.size() - 1;
+
+}
+int findStartOfMoveIndex() {
+	vector<float> avgGravity;
+	float tmp;
+	int index = 0;
+	for (unsigned int i = 0; i < armData.size(); i++) {
+		tmp = (armData[i].a.getGravity() + wristData[i].a.getGravity());
+		avgGravity.push_back(tmp/2);
+	}
+	for (unsigned int i = 0; i < avgGravity.size(); i++) {
+		if (avgGravity[i] > AVG_GRAVITY_THRESHOLD_START_MOVE)
+			return std::max(0, (int)(i - START_MOVEMENT_SAMPLES_BACK));
+
+	}
+	return index;
 }
 
 int main()

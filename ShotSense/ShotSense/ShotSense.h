@@ -6,10 +6,23 @@
 #include <fstream>
 #include <math.h>
 #include <iostream>
+#include <time.h>
+#include <string> 
+#include <algorithm>
 
 #define WRIST_MAC_ADDR "00:80:98:DC:9E:46"
 #define ARM_MAC_ADDR "00:80:98:DC:9E:09"
 
+
+#define AVG_GRAVITY_UPPER_THRESHOLD_END_MOVE 1.03
+#define AVG_GRAVITY_LOWER_THRESHOLD_END_MOVE 0.97
+#define END_MOVEMENT_SAMPLES_FORWARD 4
+#define AVG_GRAVITY_DIFF_END_MOVE 0.04
+#define AVG_GRAVITY_LAST_PEAK 1.05
+
+
+#define AVG_GRAVITY_THRESHOLD_START_MOVE 1.1
+#define START_MOVEMENT_SAMPLES_BACK 5
 
 using namespace irr::core;
 using namespace std;
@@ -59,3 +72,5 @@ quaternion calcDeltaRotation(const quaternion& q0, const quaternion& q1);
 
 void analyseMovement();
 void processData();
+int findStartOfMoveIndex();
+int findEndOfMoveIndex();
