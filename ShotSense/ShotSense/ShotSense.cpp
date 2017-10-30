@@ -224,8 +224,8 @@ int findEndOfMoveIndex() {
 }
 
 std::string getAvailableFilename(bool isMiss, std::string dirName) {
-	std::string filename(((isMiss) ? "miss" : "hit"));
-	filename.append(SHOT_DATA_FILENAME);
+	std::string filename(SHOT_DATA_FILENAME);
+	filename.append( ((isMiss) ? "miss_" : "hit_"));
 	std::string tmp(filename);
 	filename += std::to_string(findLowestIndexForNextFile(filename, dirName));
 	filename.append(SHOT_DATA_EXTENSION);

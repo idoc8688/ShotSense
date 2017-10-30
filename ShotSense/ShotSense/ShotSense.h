@@ -31,7 +31,7 @@
 #define AVG_GRAVITY_THRESHOLD_START_MOVE 1.1
 #define START_MOVEMENT_SAMPLES_BACK 5
 
-#define SHOT_DATA_FILENAME "_shot_"
+#define SHOT_DATA_FILENAME "shot_"
 #define SHOT_DATA_EXTENSION ".csv"
 
 using namespace irr::core;
