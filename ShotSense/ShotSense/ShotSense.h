@@ -5,11 +5,18 @@
 #include <vector>
 #include <fstream>
 #include <math.h>
-#include <iostream>
 #include <time.h>
 #include <string> 
 #include <algorithm>
+#include <stdio.h>
+#include <ctime>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 
+#pragma warning(disable : 4996)
+
+/*      ***********************************     Defines   ***********************************      /*/
 #define WRIST_MAC_ADDR "00:80:98:DC:9E:46"
 #define ARM_MAC_ADDR "00:80:98:DC:9E:09"
 
@@ -24,12 +31,14 @@
 #define AVG_GRAVITY_THRESHOLD_START_MOVE 1.1
 #define START_MOVEMENT_SAMPLES_BACK 5
 
+#define SHOT_DATA_FILENAME "_shot_"
+#define SHOT_DATA_EXTENSION ".csv"
+
 using namespace irr::core;
 using namespace std;
 
 
-GemHandle _handleWrist;
-GemHandle _handleArm;
+/*      **********************************     Classes   **********************************      /*/
 
 class Acceleration {
 	float x, y, z;
@@ -53,7 +62,6 @@ public:
 	unsigned short timestamp;
 	SensorData(Acceleration a, quaternion q, unsigned short timestamp) : a(a), q(q), timestamp(timestamp) {};
 	SensorData() : a(Acceleration()), q(quaternion()), timestamp(0) {};
-	//todo: fix with friend method
 
 	friend std::ostream& operator<<(std::ostream& stream, const SensorData& s) {
 		stream << s.a << "," << s.a.getGravity() << ", ," << s.q.X << "," << s.q.Y << "," << s.q.Z << "," << s.q.W << ", ,"<< s.timestamp;
@@ -61,16 +69,46 @@ public:
 	}
 };
 
-void printQuat(const quaternion& q);
+/*      ******************************     Global variables   ******************************      /*/
+
+GemHandle _handleWrist;
+GemHandle _handleArm;
+
+pair<bool, bool> flag(true, true);
+bool inMovement = false;
+quaternion initArmQuat;
+quaternion initWristQuat;
+
+quaternion lastArmQuat;
+quaternion lastWristQuat;
+quaternion lastArmDR;
+quaternion lastWristDR;
+
+Acceleration lastWristAcc;
+Acceleration lastArmAcc;
+
+vector<SensorData> armData;
+vector<SensorData> wristData;
+
+
+/*      *******************************     Functions declarations   *******************************      /*/
+
 
 void connectToSensors();
 void OnStateChangedArm(GemState state);
 void OnStateChangedWrist(GemState state);
 
-bool processInput(char op);
+
 quaternion calcDeltaRotation(const quaternion& q0, const quaternion& q1);
+void printQuat(const quaternion& q);
+
+
+bool processInput(char op);
 
 void analyseMovement();
-void processData();
+void processData(bool isMiss);
 int findStartOfMoveIndex();
 int findEndOfMoveIndex();
+
+std::string getAvailableFilename(bool isMiss, std::string dirName);
+int findLowestIndexForNextFile(std::string filename, std::string relativePath);

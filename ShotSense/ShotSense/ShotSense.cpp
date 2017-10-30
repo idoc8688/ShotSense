@@ -3,28 +3,29 @@
 
 #include "stdafx.h"
 #include "ShotSense.h"
-int countWrist = 0;
 
+/*      *******************************     Static functions   *******************************      /*/
 
-pair<bool,bool> flag(true,true);
-bool inMovement = false;
-quaternion initArmQuat;
-quaternion initWristQuat;
-
-quaternion lastArmQuat;
-quaternion lastWristQuat;
-quaternion lastArmDR;
-quaternion lastWristDR;
-
-Acceleration lastWristAcc;
-Acceleration lastArmAcc;
-
-vector<SensorData> armData;
-vector<SensorData> wristData;
+bool isExists(const std::string& name) {
+	ifstream f(name.c_str());
+	return f.good();
+}
 
 void printQuat(const quaternion& q) {
 	cout << q.X << " " << q.Y << " " << q.Z << " " << q.W << endl;
 }
+
+const std::string getCurrentDate() {
+	time_t     now = time(0);
+	struct tm  tstruct;
+	char       buf[80];
+	tstruct = *localtime(&now);
+	strftime(buf, sizeof(buf), "%Y_%m_%d", &tstruct);
+	return buf;
+}
+
+/*      *************************     GemSense functions implementations   *************************      /*/
+
 
 void connectToSensors() {
 	Gem_Get(ARM_MAC_ADDR, &_handleArm);
@@ -90,7 +91,6 @@ void OnStateChangedArm(GemState state) {
 	std::cout << endl;
 }
 
-
 void OnStateChangedWrist(GemState state) {
 	std::cout << "gem state Wrist: ";
 	switch (state) {
@@ -112,6 +112,9 @@ void OnStateChangedWrist(GemState state) {
 
 	std::cout << endl;
 }
+
+/*      *******************************     Functions implementations   *******************************      /*/
+
 
 quaternion calcDeltaRotation(const quaternion& q0, const quaternion& q1) {
 	quaternion inverseCenter(q0);
@@ -159,7 +162,10 @@ bool processInput(char op) {
 		else if (armData.size() < wristData.size()) {
 			wristData.resize(armData.size());
 		}
-		processData();
+		cout << "Hit or Miss? (enter 'h' or 'm')" << endl;
+		char missOrHit;
+		cin >> missOrHit;
+		processData((missOrHit == 'm'));
 	}
 	else {
 		return true;
@@ -169,30 +175,21 @@ bool processInput(char op) {
 
 //first set: m h h m m m h h h m m m
 //second set: h h h m h h m m m m m 
-void processData() {
+void processData(bool isMiss) {
 	ofstream f;
-	time_t timer;
-	struct tm y2k = { 0 };
-	double seconds;
-
-	y2k.tm_hour = 0;   y2k.tm_min = 0; y2k.tm_sec = 0;
-	y2k.tm_year = 100; y2k.tm_mon = 0; y2k.tm_mday = 1;
-
-	time(&timer);  /* get current time; same as: timer = time(NULL)  */
-
-	seconds = difftime(timer, mktime(&y2k));
-	std::string name = "shot_" + std::to_string((int)seconds) + ".csv";
-	f.open(name);
+	std::string dirName = getCurrentDate();
+	std::string name = getAvailableFilename(isMiss,dirName);
+	f.open(dirName + "\\" + name);
 	f << "arm, , , , , , , , , , , , wrist" << endl;
 	f << "a.x,a.y,a.z,G, , q.x,q.y,q.z,q.w, ,time, ," << "a.x,a.y,a.z,G, , q.x,q.y,q.z,q.w, ,time," << endl;
 
-	int startOffset = findStartOfMoveIndex();
-	int endOffset = findEndOfMoveIndex();
+	unsigned int startOffset = findStartOfMoveIndex();
+	unsigned int endOffset = findEndOfMoveIndex();
 	for (unsigned int i = startOffset; i <= endOffset; i++) {
 		f << armData[i] << ", ," << wristData[i] << endl;
 	}
 	f.close();
-
+	cout << "Saved last shot as " << name << endl;
 }
 
 int findEndOfMoveIndex() {
@@ -224,8 +221,25 @@ int findEndOfMoveIndex() {
 		}
 	}
 	return armData.size() - 1;
-
 }
+
+std::string getAvailableFilename(bool isMiss, std::string dirName) {
+	std::string filename(((isMiss) ? "miss" : "hit"));
+	filename.append(SHOT_DATA_FILENAME);
+	std::string tmp(filename);
+	filename += std::to_string(findLowestIndexForNextFile(filename, dirName));
+	filename.append(SHOT_DATA_EXTENSION);
+	return filename;
+}
+
+int findLowestIndexForNextFile(std::string filename, std::string relativePath) {
+	unsigned int i = 0;
+	for (i = 0; ; i++) {
+		if (!isExists(relativePath + "\\" + filename + std::to_string((int)i) + SHOT_DATA_EXTENSION)) break;
+	}
+	return i;
+}
+
 int findStartOfMoveIndex() {
 	vector<float> avgGravity;
 	float tmp;
@@ -241,6 +255,7 @@ int findStartOfMoveIndex() {
 	}
 	return index;
 }
+#include <experimental/filesystem>
 
 int main()
 {
