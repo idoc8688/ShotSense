@@ -3,6 +3,10 @@
 
 #include "stdafx.h"
 #include "ShotSense.h"
+#include <experimental/filesystem>
+
+#include <windows.h>
+
 
 /*      *******************************     Static functions   *******************************      /*/
 
@@ -16,6 +20,7 @@ void printQuat(const quaternion& q) {
 }
 
 const std::string getCurrentDate() {
+	
 	time_t     now = time(0);
 	struct tm  tstruct;
 	char       buf[80];
@@ -154,23 +159,31 @@ bool processInput(char op) {
 		inMovement = true;
 		armData.clear();
 		wristData.clear();
-	} else if (op == 'e') {
-		inMovement = false;
-		if (armData.size() > wristData.size()) {
-			armData.resize(wristData.size());
-		}
-		else if (armData.size() < wristData.size()) {
-			wristData.resize(armData.size());
-		}
-		cout << "Hit or Miss? (enter 'h' or 'm')" << endl;
-		char missOrHit;
-		cin >> missOrHit;
-		processData((missOrHit == 'm'));
-	}
-	else {
+		getchar();
+		char c = getchar();
+		endShot();
+	} else {
 		return true;
 	}
 	return false;
+}
+
+void endShot() {
+	inMovement = false;
+	if (armData.size() > wristData.size()) {
+		armData.resize(wristData.size());
+	}
+	else if (armData.size() < wristData.size()) {
+		wristData.resize(armData.size());
+	}
+	cout << "Hit or Miss? (enter 'h' or 'm'), or any other key to disregard the last shot" << endl;
+	char missOrHit;
+	cin >> missOrHit;
+	if (missOrHit != 'm' && missOrHit != 'h') {
+		cout << "last shot will be disregarded entirely" << endl;
+		return;
+	}
+	processData((missOrHit == 'm'));
 }
 
 //first set: m h h m m m h h h m m m
@@ -179,7 +192,10 @@ void processData(bool isMiss) {
 	ofstream f;
 	std::string dirName = getCurrentDate();
 	std::string name = getAvailableFilename(isMiss,dirName);
-	f.open(dirName + "\\" + name);
+	CreateDirectory(dirName.c_str(), NULL);
+
+
+	f.open(dirName + "\\" + "_filtered_" + name);
 	f << "arm, , , , , , , , , , , , wrist" << endl;
 	f << "a.x,a.y,a.z,G, , q.x,q.y,q.z,q.w, ,time, ," << "a.x,a.y,a.z,G, , q.x,q.y,q.z,q.w, ,time," << endl;
 
@@ -189,6 +205,18 @@ void processData(bool isMiss) {
 		f << armData[i] << ", ," << wristData[i] << endl;
 	}
 	f.close();
+
+	//write unfilitered data
+	ofstream f_unfiltered;
+	f_unfiltered.open(dirName + "\\" + name);
+	f_unfiltered << "arm, , , , , , , , , , , , wrist" << endl;
+	f_unfiltered << "a.x,a.y,a.z,G, , q.x,q.y,q.z,q.w, ,time, ," << "a.x,a.y,a.z,G, , q.x,q.y,q.z,q.w, ,time," << endl;
+
+	for (unsigned int i = 0; i < wristData.size(); i++) {
+		f_unfiltered << armData[i] << ", ," << wristData[i] << endl;
+	}
+	f_unfiltered.close();
+
 	cout << "Saved last shot as " << name << endl;
 }
 
@@ -249,13 +277,13 @@ int findStartOfMoveIndex() {
 		avgGravity.push_back(tmp/2);
 	}
 	for (unsigned int i = 0; i < avgGravity.size(); i++) {
-		if (avgGravity[i] > AVG_GRAVITY_THRESHOLD_START_MOVE)
-			return std::max(0, (int)(i - START_MOVEMENT_SAMPLES_BACK));
+		if (avgGravity[i] > AVG_GRAVITY_THRESHOLD_START_MOVE) {
+			return ((int)(i - START_MOVEMENT_SAMPLES_BACK) > 0) ? (int)(i - START_MOVEMENT_SAMPLES_BACK) : 0;
+		}
 
 	}
 	return index;
 }
-#include <experimental/filesystem>
 
 int main()
 {

@@ -14,6 +14,7 @@
 #include <iostream>
 #include <iomanip>
 
+
 #pragma warning(disable : 4996)
 
 /*      ***********************************     Defines   ***********************************      /*/
@@ -104,7 +105,7 @@ void printQuat(const quaternion& q);
 
 
 bool processInput(char op);
-
+void endShot();
 void analyseMovement();
 void processData(bool isMiss);
 int findStartOfMoveIndex();
